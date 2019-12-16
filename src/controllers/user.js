@@ -9,7 +9,7 @@ module.exports = {
         }catch(error) {
            
             res.send(error)
-        }
+        } return res.status(400).send('gagal')
     },
     readUser: async(req, res) => {
         try{

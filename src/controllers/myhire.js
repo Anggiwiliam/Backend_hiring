@@ -257,60 +257,70 @@ module.exports = {
     },
     registUser: async(req, res) => {
         try{
-            const result = await userModel.createUser(req.body) 
-            const token = JWT.sign(
-                { 
-                    id: result.insertId,
-                    category: req.body.category
-                },
-                process.env.JWT_SECRET,
-                {
-                    expiresIn: '10m'
-                }
-            )
-            const temp = await appModel.saveStatusToken(token, 1)
-            let regist;
-            if(req.body.category == 0){
-                regist = {
-                    id: result.insertId,
-                    token: token,
-                    form: [
-                        'name',
-                        'date_of_birth', 
-                        'email', 
-                        'phone_number', 
-                        'location', 
-                        'skill',
-                        'showcase',
-                        'description',
-                        'date_created',
-                        'date_updated',
-                        'created_by'
-                    ]
-                }
-            } else {
-                regist = {
-                    id: result.insertId,
-                    token: token,
-                    form: [
-                        'name',
-                        'email', 
-                        'phone_number', 
-                        'location', 
-                        'required_skill', 
-                        'description',
-                        'logo',
-                        'date_created',
-                        'date_updated',
-                        'created_by'
-                    ]
-                }
-            }
-            response(res, 200, regist)   
+            const result = await userModel.createUser(req.body)
+            res.send(result)
+            return res.status(400).send('gagal')
         }catch(error) {
-            response(res, 406, {message: 'the username was there'})
-        }
+           
+            res.send(error)
+        } 
     },
+    // registUser: async(req, res) => {
+    //     try{
+    //         const result = await userModel.createUser(req.body) 
+    //         const token = JWT.sign(
+    //             { 
+    //                 id: result.insertId,
+    //                 category: req.body.category
+    //             },
+    //             process.env.JWT_SECRET,
+    //             {
+    //                 expiresIn: '10m'
+    //             }
+    //         )
+    //         const temp = await appModel.saveStatusToken(token, 1)
+    //         let regist;
+    //         if(req.body.category == 0){
+    //             regist = {
+    //                 id: result.insertId,
+    //                 token: token,
+    //                 form: [
+    //                     'name',
+    //                     'date_of_birth', 
+    //                     'email', 
+    //                     'phone_number', 
+    //                     'location', 
+    //                     'skill',
+    //                     'showcase',
+    //                     'description',
+    //                     'date_created',
+    //                     'date_updated',
+    //                     'created_by'
+    //                 ]
+    //             }
+    //         } else {
+    //             regist = {
+    //                 id: result.insertId,
+    //                 token: token,
+    //                 form: [
+    //                     'name',
+    //                     'email', 
+    //                     'phone_number', 
+    //                     'location', 
+    //                     'required_skill', 
+    //                     'description',
+    //                     'logo',
+    //                     'date_created',
+    //                     'date_updated',
+    //                     'created_by'
+    //                 ]
+    //             }
+    //         }
+    //         response(res, 200, regist)   
+    //     }catch(error) {
+    //         response(res, 406, {message: 'the username was there'})
+    //     }
+    // },
     searchEngineerby: async(req, res) => {
         const token = req.headers.authorization
         try{
@@ -319,11 +329,12 @@ module.exports = {
             const sort = req.query.sort;
             const limit = req.query.limit;
             const offset = req.query.offset;
+            console.log(skill);
 
             let data = JWT.verify(token, process.env.JWT_SECRET);
             let category = data.category
             //if(category == 1) {
-                const result = await engineerModel.searchEngineer(name, skill, sort, limit, offset);
+                const result = await engineerModel.searchEngineer(skill, sort, limit, offset);
                 console.log(result);
                 
                 response(res, 200, result)
@@ -385,12 +396,14 @@ module.exports = {
         try{
             let data = JWT.verify(token, process.env.JWT_SECRET);
             let idToken = data.id;
+            console.log(idToken);
             const {
                 id,
                 name,
                 skill,
                 description,
                 id_engineer,
+                budget,
                 done
             } = req.body;
 
@@ -398,13 +411,117 @@ module.exports = {
                 name,
                 skill,
                 description,
-                id_company: id,
+                id_company: idToken,
                 id_engineer,
+                budget,
                 done
             }
             let idProject = id;
-            const result = await projectModel.updateProject(dataProject, idToken, idProject)
-            response(res, 200, {message: "the data was changed"})
+            console.log(idProject);
+            
+            const result = await projectModel.updateCompanyProject(dataProject, idToken, idProject)
+            response(res, 200, {message: "the data was changed", result:result})
+        }catch(error){
+            console.log(error);
+            
+            response(res, 500, {message: "the server is error"})
+        }
+    },
+    changeProjectDone: async(req, res) => {
+        const token = req.headers.authorization
+        try{
+            let data = JWT.verify(token, process.env.JWT_SECRET);
+            let idToken = data.id;
+            let category = data.category;
+            if(category == '1'){
+                console.log(idToken);
+            
+                const {
+                    id,
+                    done
+                } = req.body;
+
+                let dataProject = {
+                    id_company: idToken,
+                    done
+                }
+                let idProject = id;
+                console.log(idProject);
+                
+                const result = await projectModel.updateCompanyProject(dataProject, idToken, idProject)
+                response(res, 200, {message: "the data was changed", result:result})
+            }else {
+                response(res, 406, {message: "you are not company user"})
+            }
+            
+        }catch(error){
+            console.log(error);
+            
+            response(res, 500, {message: "the server is error"})
+        }
+    },
+    changeProjectStatus: async(req, res) => {
+        const token = req.headers.authorization
+        try{
+            let data = JWT.verify(token, process.env.JWT_SECRET);
+            let idToken = data.id;
+            let category = data.category;
+            if(category == '0'){
+                console.log(idToken);
+            
+                const {
+                    id,
+                    status
+                } = req.body;
+
+                let dataProject = {
+                    //id_company: idToken,
+                    status
+                }
+                let idProject = id;
+                console.log(idProject);
+                
+                const result = await projectModel.updateEngineerProject(dataProject, idToken, idProject)
+                response(res, 200, {message: "the data was changed", result:result})
+            }else {
+                response(res, 406, {message: "you are not engineer user"})
+            }
+            
+        }catch(error){
+            console.log(error);
+            
+            response(res, 500, {message: "the server is error"})
+        }
+    },
+    changeDoProject: async(req, res) => {
+        const token = req.headers.authorization
+        try{
+            let data = JWT.verify(token, process.env.JWT_SECRET);
+            let idToken = data.id;
+            let category = data.category;
+            if(category == '1'){
+                console.log(idToken);
+            
+                const {
+                    id,
+                    name_engineer,
+                    id_engineer
+                } = req.body;
+
+                let dataProject = {
+                    id_company: idToken,
+                    name_engineer,
+                    id_engineer
+                }
+                
+                let idProject = id;
+                console.log(idProject);
+                const result = await projectModel.updateCompanyProject(dataProject, idToken, idProject)
+                response(res, 200, {message: "the data was changed", result:result})
+            }else {
+                response(res, 406, {message: "you are not company user"})
+            }
+            
         }catch(error){
             console.log(error);
             
@@ -419,21 +536,24 @@ module.exports = {
             const {
                 name,
                 skill,
-                budget,
                 description,
                 id_engineer,
+                budget,
                 done
             } = req.body;
 
             let dataProject = {
                 name,
                 skill,
-                budget,
                 description,
-                id_engineer,
                 id_company: id,
-                done
+                id_engineer,
+                budget,
+                done,
+                status: '0'
             }
+            console.log(dataProject);
+            
             const result = await projectModel.createProject(dataProject);
             response(res, 200, {message: 'the project was created'})
         }catch(err){
@@ -442,37 +562,23 @@ module.exports = {
             response(res, 500, {message: "the server is error"})
         }
     },
-    readProject: async(req, res) => {
+    readProject: async(req, res)=>{
         const token = req.headers.authorization
         try{
             let data = JWT.verify(token, process.env.JWT_SECRET);
             let id = data.id;
-            
-            const result = await projectModel.readCompanyProject(id)
-            res.send(result)
-        }catch(error) {
-           
-            res.send(error)
+            let category = data.category
+            if(category == 0) {
+                const result = await projectModel.readEngineerProject(id)
+                response(res, 200, result)
+            } else if (category == 1) {
+                const result = await projectModel.readCompanyProject(id)
+                response(res, 200, result)
+            }
+        }catch(error){
+            response(res, 500, {message: "the server is error"})
         }
     },
-    // readProject: async(req, res)=>{
-    //     const token = req.headers.authorization
-    //     try{
-    //         let data = JWT.verify(token, process.env.JWT_SECRET);
-    //         let id = data.id;
-    //         let category = data.category
-    //         const result = await projectModel.readCompanyProject(id)
-    //             response(res, 200, result)
-    //         if(category == 0) {
-    //             const result = await projectModel.readEngineerProject(id)
-    //             response(res, 200, result)
-    //         } else if (category == 1) {
-                
-    //         }
-    //     }catch(error){
-    //         response(res, 500, {message: "the server is error"})
-    //     }
-    // },
     deleteProject: async(req, res) => {
         const token = req.headers.authorization
         try{
@@ -480,7 +586,11 @@ module.exports = {
             let data = JWT.verify(token, process.env.JWT_SECRET);
             let id_company = data.id;
             let id_index = id;
+            console.log('id:'+id_index+' id_comp: '+id_company);
+            
             const result = await projectModel.deleteProject(id_company, id_index);
+            console.log(result);
+            
             response(res, 200, {message:'the project was deleted'});
         }catch(err){
             console.log(err);

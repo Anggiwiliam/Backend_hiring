@@ -55,9 +55,13 @@ module.exports = {
             })
         })
     },
-    searchEngineer: (name = ' ', skill = ' ', sort = 'name', limit = 100, offset = 0) => {
+    searchEngineer: (skill = '', sort = 'name', limit = 10, offset = 0) => {
         return new Promise((resolve, reject) => {
-            conn.query(`SELECT * FROM engineers WHERE skill LIKE '%${skill}%' ORDER BY ${sort} ASC LIMIT ${limit} OFFSET ${offset}`, (err, result) => {
+            conn.query(`SELECT engineers.*, project.project AS project,  project.done AS done
+            FROM engineers
+            LEFT JOIN (SELECT projects.id_engineer,COUNT(projects.id_engineer) AS project, SUM(projects.done) AS done  
+            FROM projects
+            GROUP BY projects.id_engineer) AS project ON project.id_engineer=engineers.created_by WHERE skill LIKE '%${skill}%' ORDER BY ${sort} ASC LIMIT ${limit} OFFSET ${offset}`, (err, result) => {
                 if(err) reject(err)
                 resolve(result)
             })

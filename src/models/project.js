@@ -28,9 +28,21 @@ module.exports = {
             })
         })
     },
-    updateProject: (body, param1, param2) => {
+    updateCompanyProject: (body, param1, param2) => {
         return new Promise((resolve, reject) => {
-            conn.query(`UPDATE projects SET ? WHERE id = ? AND id_company = ?`, [body, param1, param2], (err, result) => {
+            conn.query(`UPDATE projects SET ? WHERE id = ? AND id_company = ?`, [body, param2, param1], (err, result) => {
+                console.log(`UPDATE projects SET ${body} WHERE id = ${param2} AND id_company = ${param1}`);
+                
+                if(err) reject(err)
+                resolve(result)
+            })
+        })
+    },
+    updateEngineerProject: (body, param1, param2) => {
+        return new Promise((resolve, reject) => {
+            conn.query(`UPDATE projects SET ? WHERE id = ? AND id_engineer = ?`, [body, param2, param1], (err, result) => {
+                console.log(`UPDATE projects SET ${body} WHERE id = ${param2} AND id_company = ${param1}`);
+                
                 if(err) reject(err)
                 resolve(result)
             })
@@ -38,7 +50,7 @@ module.exports = {
     },
     deleteProject: (param1, param2) => {
         return new Promise((resolve, reject) => {
-            conn.query(`DELETE FROM projects WHERE id = ? AND id_company = ?`, [param1, param2], (err, result) => {
+            conn.query(`DELETE FROM projects WHERE id = ? AND id_company = ?`, [param2, param1], (err, result) => {
                 if(err) reject(err)
                 resolve(result)
             })
